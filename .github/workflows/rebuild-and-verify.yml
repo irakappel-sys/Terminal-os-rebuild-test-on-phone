@@ -43,7 +43,7 @@ jobs:
           python3 scripts/verify-iso-50x.py --help >/dev/null
 
       - name: Rebuild TerminalOS and perform 50 full byte passes
-        run: sudo ./rebuild-terminalos.sh
+        run: sudo bash rebuild-terminalos.sh
 
       - name: Re-check final checksum
         run: |
