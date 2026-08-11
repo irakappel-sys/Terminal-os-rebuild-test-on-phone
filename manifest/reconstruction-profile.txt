@@ -1,0 +1,14 @@
+TerminalOS reconstruction profile
+
+Base distribution: Debian trixie amd64
+Runtime kernel: 6.12.94-terminalos
+SquashFS compression: xz
+SquashFS block size: 1048576 bytes
+Live media: automatic discovery via live-boot
+Forbidden legacy parameter: live-media=/dev/sr0
+Boot targets: legacy BIOS and x86_64 UEFI
+Offline repository: /opt/terminalos/repository
+Repository signing fingerprint: 981B65A121E34AB45318ED7BF5AB23E53B9B48DC
+Historical DEV5 byte size: 1513994240
+Historical DEV5 SHA-256: 658b50ad7929f94edd9bb0397e4aa9617871a2979d2cf82d65000bd72962712c
+Verification passes for rebuilt artifact: 50 full bytewise passes
