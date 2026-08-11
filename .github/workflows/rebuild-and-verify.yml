@@ -1,0 +1,84 @@
+name: Rebuild and verify TerminalOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rebuild-terminalos.sh'
+      - 'scripts/**'
+      - 'manifest/**'
+      - '.github/workflows/rebuild-and-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: terminalos-rebuild-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Check out reconstruction repository
+        uses: actions/checkout@v4
+
+      - name: Install host build dependencies
+        run: |
+          set -Eeuo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            debootstrap git ca-certificates gnupg gpgv xorriso squashfs-tools \
+            grub-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools rsync \
+            python3 file coreutils
+
+      - name: Check scripts before privileged build
+        run: |
+          set -Eeuo pipefail
+          bash -n rebuild-terminalos.sh
+          python3 -m py_compile scripts/verify-iso-50x.py
+          python3 scripts/verify-iso-50x.py --help >/dev/null
+
+      - name: Rebuild TerminalOS and perform 50 full byte passes
+        run: sudo ./rebuild-terminalos.sh
+
+      - name: Re-check final checksum
+        run: |
+          set -Eeuo pipefail
+          cd out
+          sha256sum -c TerminalOS-1.0.1-rebuild.iso.sha256
+          test "$(python3 -c 'import json; print(json.load(open("verification-50x.json"))["passes"])')" = 50
+          test "$(python3 -c 'import json; print(json.load(open("verification-50x.json"))["result"])')" = PASS
+
+      - name: Upload immutable workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TerminalOS-1.0.1-rebuild-${{ github.run_number }}
+          path: |
+            out/TerminalOS-1.0.1-rebuild.iso
+            out/TerminalOS-1.0.1-rebuild.iso.sha256
+            out/verification-50x.json
+            out/el-torito-report.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Publish verified GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          tag="rebuild-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          title="TerminalOS reconstruction ${GITHUB_RUN_NUMBER}"
+          notes="Automated TerminalOS reconstruction from pinned official packages. The workflow completed structural BIOS/UEFI/kernel checks and 50 full byte-for-byte verification passes. This is a reconstruction artifact, not a claim of byte identity with the historical DEV5 ISO unless an external canonical ISO is explicitly supplied to the verifier."
+          gh release create "$tag" \
+            out/TerminalOS-1.0.1-rebuild.iso \
+            out/TerminalOS-1.0.1-rebuild.iso.sha256 \
+            out/verification-50x.json \
+            out/el-torito-report.txt \
+            --target "$GITHUB_SHA" \
+            --title "$title" \
+            --notes "$notes"
