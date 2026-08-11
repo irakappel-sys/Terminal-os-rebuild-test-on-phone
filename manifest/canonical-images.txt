@@ -1,0 +1,5 @@
+# Historical TerminalOS image identifiers recovered from validated build logs
+
+TerminalOS-1.0.0.iso 0961b2bacb52cf4cbe5dd8c370d9e267c5f49decd05840ccff818b4cbaaf99c6
+TerminalOS-1.0.0-RC1.iso e9f758a62729b3a6b79d8afa5ffeb896002ba33b9a363aef65e6cfb2712eef07
+TerminalOS-1.0.1-DEV5.iso 658b50ad7929f94edd9bb0397e4aa9617871a2979d2cf82d65000bd72962712c size=1513994240
